@@ -34,7 +34,7 @@ func Handler(app http.Handler, options ...Option) http.Handler {
 
 	// Defaults
 	Bots(crawlerUserAgents)(h)
-	IgnoredExtension(extensionsToIgnore)(h)
+	IgnoredExtensions(extensionsToIgnore)(h)
 	ServiceURL(prerenderServiceURL)(h)
 
 	if v := os.Getenv("PRERENDER_SERVICE_URL"); v != "" {
