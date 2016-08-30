@@ -201,6 +201,8 @@ func (h *handler) getPrerenderedPage(rw http.ResponseWriter, req1 *http.Request)
 		return
 	}
 
+	rw.WriteHeader(resp.StatusCode)
+
 	defer resp.Body.Close()
 
 	io.Copy(rw, resp.Body)
