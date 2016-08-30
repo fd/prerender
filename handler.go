@@ -3,7 +3,7 @@ package prerender
 
 import (
 	"errors"
-	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -205,7 +205,14 @@ func (h *handler) getPrerenderedPage(rw http.ResponseWriter, req1 *http.Request)
 
 	defer resp.Body.Close()
 
-	io.Copy(rw, resp.Body)
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		h.logf("prerender error: %s", err)
+		http.Error(rw, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	rw.Write(content)
 }
 
 func (h *handler) buildApiUrl(req *http.Request) (string, error) {
