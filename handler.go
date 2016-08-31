@@ -203,6 +203,12 @@ func (h *handler) getPrerenderedPage(rw http.ResponseWriter, req1 *http.Request)
 
 	rw.WriteHeader(resp.StatusCode)
 
+	for key, values := range resp.Header {
+		for _, value := range values {
+			rw.Header().Set(key, value)
+		}
+	}
+
 	defer resp.Body.Close()
 
 	content, err := ioutil.ReadAll(resp.Body)
