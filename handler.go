@@ -3,7 +3,7 @@ package prerender
 
 import (
 	"errors"
-	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -194,16 +194,52 @@ func (h *handler) getPrerenderedPage(rw http.ResponseWriter, req1 *http.Request)
 		req2.SetBasicAuth(h.prerenderUsername, h.prerenderPassword)
 	}
 
-	resp, err := http.DefaultClient.Do(req2)
+	httpClient := http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return errors.New("Redirect")
+		},
+	}
+
+	resp, err := httpClient.Do(req2)
+
+	if err != nil && strings.HasSuffix(err.Error(), "Redirect") == false {
+		h.logf("prerender error: %s", err)
+		http.Error(rw, "Internal server error", http.StatusInternalServerError)
+		return
+	} else if err != nil && strings.HasSuffix(err.Error(), "Redirect") == true {
+
+		if resp.Header != nil {
+			for key, values := range resp.Header {
+				for _, value := range values {
+					rw.Header().Set(key, value)
+				}
+			}
+		}
+
+		rw.WriteHeader(301)
+		rw.Write([]byte(""))
+		return
+	}
+
+	rw.WriteHeader(resp.StatusCode)
+
+	for key, values := range resp.Header {
+		for _, value := range values {
+			rw.Header().Set(key, value)
+		}
+	}
+
+	defer resp.Body.Close()
+
+	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		h.logf("prerender error: %s", err)
 		http.Error(rw, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	defer resp.Body.Close()
+	rw.Write(content)
 
-	io.Copy(rw, resp.Body)
 }
 
 func (h *handler) buildApiUrl(req *http.Request) (string, error) {
