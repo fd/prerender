@@ -3,7 +3,6 @@ package prerender
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -224,11 +223,9 @@ func (h *handler) getPrerenderedPage(rw http.ResponseWriter, req1 *http.Request)
 
 	rw.WriteHeader(resp.StatusCode)
 
-	if resp.Header != nil {
-		for key, values := range resp.Header {
-			for _, value := range values {
-				rw.Header().Add(key, value)
-			}
+	for key, values := range resp.Header {
+		for _, value := range values {
+			rw.Header().Set(key, value)
 		}
 	}
 
@@ -237,7 +234,6 @@ func (h *handler) getPrerenderedPage(rw http.ResponseWriter, req1 *http.Request)
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		h.logf("prerender error: %s", err)
-		fmt.Println(err)
 		http.Error(rw, "Internal server error", http.StatusInternalServerError)
 		return
 	}
